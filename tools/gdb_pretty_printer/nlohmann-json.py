@@ -1,6 +1,8 @@
 import gdb
 import re
+import sys
 
+py_ver = sys.version_info
 ns_pattern = re.compile(r'nlohmann(::json_abi(?P<tags>\w*)(_v(?P<v_major>\d+)_(?P<v_minor>\d+)_(?P<v_patch>\d+))?)?::(?P<name>.+)')
 class JsonValuePrinter:
     "Print a json-value"
@@ -21,7 +23,15 @@ def json_lookup_function(val):
           t = m.group('name')
           if t and t.startswith('detail::value_t::'):
               try:
-                  union_val = val["m_data"]['m_value'][t.removeprefix('detail::value_t::')]
+                  key_val = None
+                  # python < 3.9 do not have removeprefix
+                  if py_ver.major == 3 and py_ver.minor <= 8 or py_ver.major < 3:
+                      # no removeprefix
+                      key_val = t.replace('detail::value_t::', '', 1)
+                  else:
+                      key_val = t.removeprefix('detail::value_t::')
+
+                  union_val = val['m_data']['m_value'][key_val]
                   if union_val.type.code == gdb.TYPE_CODE_PTR:
                       return gdb.default_visualizer(union_val.dereference())
                   else:
