@@ -21,15 +21,16 @@ def json_lookup_function(val):
         if name and name.startswith('basic_json<') and name.endswith('>'):
             m = ns_pattern.fullmatch(str(val["m_data"]['m_type']))
             t = m.group('name')
-            if t and t.startswith('detail::value_t::'):
+            prefix = 'detail::value_t::'
+            if t and t.startswith(prefix):
                 try:
                     key_val = None
                     # python < 3.9 do not have removeprefix
                     if py_ver.major == 3 and py_ver.minor <= 8 or py_ver.major < 3:
                         # no removeprefix
-                        key_val = t.replace('detail::value_t::', '', 1)
+                        key_val = t.replace(prefix, '', 1)
                     else:
-                        key_val = t.removeprefix('detail::value_t::')
+                        key_val = t.removeprefix(prefix)
 
                     union_val = val['m_data']['m_value'][key_val]
                     if union_val.type.code == gdb.TYPE_CODE_PTR:
